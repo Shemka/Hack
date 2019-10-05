@@ -146,11 +146,12 @@ class Tester:
                     jobsr = workers['worker_dayt'][right]
                     idx_daytr = workers['worker_dayt'][str(right)+'_idx']
                     
-                    if not el0 in jobsl or not el1 in jobsr:
+                    if (not el0 in jobsl or not el1 in jobsr) and (el0 != 0 and el1 != 0):
                         return 'bad'
                     else:
-                        if idx_daytl[jobsl.index(el0)] != idx_daytr[jobsr.index(el1)]:
-                            return 'bad'
+                        if el0 != 0 and el1 != 0:
+                            if idx_daytl[jobsl.index(el0)] != idx_daytr[jobsr.index(el1)]:
+                                return 'bad'
             else:
                 # Night -> not Evening, Morning
                 # Night, Evening -> not Morning
@@ -168,18 +169,19 @@ class Tester:
                         
                     right = self.days_idx[i]
                     
-                    jobsl = workers['worker_dayt'][left]
-                    idx_daytl = workers['worker_dayt'][str(left)+'_idx']
+                    jobsl = workers['driver_dayt'][left]
+                    idx_daytl = workers['driver_dayt'][str(left)+'_idx']
                     
-                    jobsr = workers['worker_dayt'][right]
-                    idx_daytr = workers['worker_dayt'][str(right)+'_idx']
+                    jobsr = workers['driver_dayt'][right]
+                    idx_daytr = workers['driver_dayt'][str(right)+'_idx']
                     
-                    if not el0 in jobsl or not el1 in jobsr:
+                    if (not el0 in jobsl or not el1 in jobsr) and (el0 != 0 and el1 != 0):
                         return 'bad'
                     else:
-                        if idx_daytl[jobsl.index(el0)] != idx_daytr[jobsr.index(el1)]:
-                            return 'bad'
-            
+                        if el0 != 0 and el1 != 0:
+                            if idx_daytl[jobsl.index(el0)] != idx_daytr[jobsr.index(el1)]:
+                                return 'bad'
+                            
             # CASE 3 ("3и" paradox)
             conc = np.concatenate((np.array([self.days_before[-1]]), self.surface[idx]))
             flag = False
