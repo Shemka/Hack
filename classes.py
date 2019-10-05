@@ -1,7 +1,3 @@
-import numpy as np
-import pandas as pd
-import random
-import json
 # -----------------------------------------------------------
 # Action class where define operations under <actions_object>
 # -----------------------------------------------------------
@@ -29,7 +25,7 @@ class Environment:
         self.size = (c, n)
         self.table = np.zeros(self.size)
         self.now_pos = [0, 0]
-        self.days_idx = days_idx
+        self.days_idx = list(map(int, days_idx))
         self.days_before = days_before
     
     # position = (start_day, end_date)
@@ -78,7 +74,7 @@ class Tester:
         self.size = size
         self.w_d = w_d
         self.days_before = days_before
-        self.days_idx = days_idx
+        self.days_idx = list(map(int, days_idx))
         #self.special_cases = special_cases
         
     # psurface = piece of days_idx (5 els)
@@ -140,10 +136,10 @@ class Tester:
                         
                     right = self.days_idx[i]
                     
-                    jobsl = workers['worker_dayt'][left]
+                    jobsl = workers['worker_dayt'][str(left)]
                     idx_daytl = workers['worker_dayt'][str(left)+'_idx']
                     
-                    jobsr = workers['worker_dayt'][right]
+                    jobsr = workers['worker_dayt'][str(right)]
                     idx_daytr = workers['worker_dayt'][str(right)+'_idx']
                     
                     if (not el0 in jobsl or not el1 in jobsr) and (el0 != 0 and el1 != 0):
@@ -169,10 +165,10 @@ class Tester:
                         
                     right = self.days_idx[i]
                     
-                    jobsl = workers['driver_dayt'][left]
+                    jobsl = workers['driver_dayt'][str(left)]
                     idx_daytl = workers['driver_dayt'][str(left)+'_idx']
                     
-                    jobsr = workers['driver_dayt'][right]
+                    jobsr = workers['driver_dayt'][str(right)]
                     idx_daytr = workers['driver_dayt'][str(right)+'_idx']
                     
                     if (not el0 in jobsl or not el1 in jobsr) and (el0 != 0 and el1 != 0):
@@ -210,9 +206,9 @@ def all_possible_actions(w_d, dayt):
     with open('works.json', 'r') as f:
         workers = json.loads(f.read())
     if w_d:
-        worker = workers['worker_dayt'][dayt]
+        worker = workers['worker_dayt'][str(dayt)]
     else:
-        worker = workers['driver_dayt'][dayt]
+        worker = workers['driver_dayt'][str(dayt)]
     return worker+['В']
         
 
@@ -227,3 +223,96 @@ def available_actions_in_point(table, point, w_d):
         if response == 'bad':
             actions.remove(i)
     return actions
+
+# ---------------------------------------------------------
+# Agent class is a class where bot attract with environment
+# w_d = 1 or 0 (1 if it is a worker and 0 if it's not)
+# size = (y, x)
+# before_days = array of days before this month
+# days_idx = array with len of count of days in month with values 0, 1, 2 (usuall day, saturday, sunday)
+# holidays = [(id, (start, end))] or None
+# ---------------------------------------------------------
+class Agent:
+    def __init__(self, w_d, size, before_days, days_idx, holidays=None):
+        self.w_d = w_d
+        self.size = size
+        self.before_days = before_days
+        self.days_idx = list(map(int, days_idx))
+        self.holidays = holidays
+        self.env = Environment(size[0], size[1], days_idx, before_days)
+            
+        self.actions = []
+        for day_idx in days_idx:
+            self.actions.append(Actions(all_possible_actions(w_d, day_idx)))
+    
+    def insert_holidays(self):
+        if not self.holidays is None:
+            for el in self.holidays:
+                self.env.add_holiday(el[0], el[1]) 
+    
+    def count_scores(self):
+        
+        with open('works.json', 'r') as f:
+            workers = json.loads(f.read())
+            
+        if self.w_d:
+            length = self.env.table.shape[1]
+            scores = [-self.days_idx.count(0)*8]*length
+            worker = workers['worker_hours']
+            for en, el in enumerate(self.env.table):
+                for i in el:
+                    for j in (8, 9, 10):
+                        if i in worker[str(j)]:
+                            scores[en] += j
+                        elif i == 'О':
+                            scores[en] += 8
+                            
+                    
+        else:
+            length = self.env.table.shape[1]
+            scores = [-self.days_idx.count(0)*8]*length
+            worker = workers['driver_hours']
+            for en, el in enumerate(self.env.table):
+                for i in el:
+                    for j in (8, 9, 10):
+                        if i in worker[str(j)]:
+                            scores[en] += j
+                        elif i == 'О':
+                            scores[en] += 8
+        
+        return scores
+    
+    def complete_table(self):
+        self.insert_holidays()
+        for i in range(self.size[1]):
+            for j in range(self.size[0]):
+                if j == 0:
+                    if not 'В' in before_days[i] or not 'О' in before_days[i]:
+                        self.env.add_element('В')
+                    elif self.days_before[-1] == 'В' or self.days_before[-1] == 'О':
+                        el = random.choice(self.actions.actions())
+                        if el != 'В':
+                            self.actions.remove_action(el)
+                        self.env.add_element(el)
+                    else:
+                        conc = np.concatenate((self.before_days, self.env.table))
+                        actions = available_actions_in_point(conc, (i, j), self.w_d)
+                        if len(actions) == 1:
+                            self.env.add_element('В')
+                        else:
+                            el = random.choice(actions)
+                            if el != 'В':
+                                self.actions.remove_action(el)
+                            self.env.add_element(el)
+                else:
+                    conc = np.concatenate((self.before_days, self.env.table))
+                    actions = available_actions_in_point(conc, (i, j), self.w_d)
+                    if len(actions) == 1:
+                        self.env.add_element('В')
+                    else:
+                        el = random.choice(actions)
+                        if el != 'В':
+                            self.actions.remove_action(el)
+                        self.env.add_element(el)
+        scores = self.count_scores()
+        return self.env.table, scores
