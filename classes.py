@@ -1,3 +1,7 @@
+import numpy as np
+import pandas as pd
+import random
+import json
 # -----------------------------------------------------------
 # Action class where define operations under <actions_object>
 # -----------------------------------------------------------
@@ -23,17 +27,17 @@ class Actions:
 class Environment:
     def __init__(self, n, c, days_idx, days_before):
         self.size = (c, n)
-        self.table = np.zeros(size)
+        self.table = np.zeros(self.size)
         self.now_pos = [0, 0]
         self.days_idx = days_idx
         self.days_before = days_before
     
     # position = (start_day, end_date)
     def add_holiday(self, y, position):
-        self.table[now_pos[0]][position[0]-1:position[1]-1] = 'О'
+        self.table[self.now_pos[0]][position[0]-1:position[1]-1] = 'О'
     
     def how_to_move(self):
-        if self.now_pos[1] == self.size-1 and self.now_pos[0] != self.size[0]-1:
+        if self.now_pos[1] == self.size[1]-1 and self.now_pos[0] != self.size[0]-1:
             self.now_pos[0] += 1
             self.now_pos[1] = 0
             return True
@@ -43,14 +47,14 @@ class Environment:
     # Add element to now sequence
     # Return True or False depends on is table is full
     def add_element(self, element):
-        if table[now_pos[0]][now_pos[1]] == 'О':
+        if self.table[self.now_pos[0]][self.now_pos[1]] == 'О':
             moves = self.how_to_move()
             if moves == 'Kavabanga':
                 return True
             else:
-                add_element(element)
+                self.add_element(element)
         else:
-            table[now_pos[0]][now_pos[1]] = element
+            self.table[self.now_pos[0]][self.now_pos[1]] = element
             moves = self.how_to_move()
             if moves == 'Kavabanga':
                 return True
@@ -105,7 +109,7 @@ class Tester:
             
             # CASE 1 (max days)
             steps = 0
-            for el in np.concat((self.days_before, self.surface[idx])):
+            for el in np.concatenate((self.days_before, self.surface[idx])):
                 # Check was holidays in range of 5 days or not
                 if el in ('В', 'О'):
                     steps = 0
@@ -124,17 +128,17 @@ class Tester:
                 # Night, Evening -> not Morning
                 conc = np.concatenate((np.array([  self.days_before[-1]]), self.surface[idx]))
                 
-                for i in range(1, self.concat[0]):
+                for i in range(1, len(conc)):
                     
                     # Previous day and now
                     el1, el0 = (self.surface[idx][i], self.surface[idx][i-1])
                     
                     if i == 1:
-                        left = previous_day(days_idx[i-1:i+4]) 
+                        left = self.previous_day(self.days_idx[i-1:i+4])
                     else:
-                        left = days_idx[i-1]
+                        left = self.days_idx[i-1]
                         
-                    right = days_idx[i]
+                    right = self.days_idx[i]
                     
                     jobsl = workers['worker_dayt'][left]
                     idx_daytl = workers['worker_dayt'][str(left)+'_idx']
@@ -150,19 +154,19 @@ class Tester:
             else:
                 # Night -> not Evening, Morning
                 # Night, Evening -> not Morning
-                conc = np.concatenate((np.array([  self.days_before[-1]]), self.surface[idx]))
+                conc = np.concatenate((np.array([ self.days_before[-1]]), self.surface[idx]))
                 
-                for i in range(1, self.concat[0]):
+                for i in range(1, len(conc)):
                     
                     # Previous day and now
                     el1, el0 = (self.surface[idx][i], self.surface[idx][i-1])
                     
                     if i == 1:
-                        left = previous_day(days_idx[i-1:i+4]) 
+                        left = self.previous_day(self.days_idx[i-1:i+4])
                     else:
-                        left = days_idx[i-1]
+                        left = self.days_idx[i-1]
                         
-                    right = days_idx[i]
+                    right = self.days_idx[i]
                     
                     jobsl = workers['worker_dayt'][left]
                     idx_daytl = workers['worker_dayt'][str(left)+'_idx']
